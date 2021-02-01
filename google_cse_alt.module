@@ -1,0 +1,330 @@
+<?php
+/**
+ * @file
+ * Display one or more Google Custom Search Engine blocks on your site.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function google_cse_alt_menu() {
+    $items = array();
+
+  // If no Search module in core, then we need to make our own admin page.
+  if (!module_exists('search')) {
+    $items['admin/config/search/cse-settings'] = array(
+      'title' => 'Configure Google CSE',
+      'description' => '',
+      'page callback' => 'backdrop_get_form',
+      'page arguments' => array('google_cse_alt_admin_settings'),
+      'file' => 'google_cse_alt.admin.inc',
+      'access arguments' => array('administer Google CSE'),
+    );
+  }
+  $items['admin/config/search/export-cse'] = array(
+    'title' => 'Google CSE XML',
+    'description' => 'Export custom search engine code',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'google_cse_alt_render_xml',
+    'access callback' => 'google_cse_alt_render_xml_access',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_config_info().
+ */
+function google_cse_alt_config_info() {
+  $prefixes['google_cse_alt.settings'] = array(
+    'label' => t('Google CSE settings'),
+    'group' => t('Configuration'),
+  );
+}
+
+
+/**
+ * Return xml with only the settings in google-cse-alt-xml.tpl.
+ * TBD: update this to handle multiple settings. Or perhaps drop ?
+ */
+function google_cse_alt_render_xml() {
+  $config_name = _google_cse_alt_config_name();
+  $cse_array = explode(":", config_get($config_name, 'google_cse_alt_cx'));
+  $cse_variables = array(
+    "cse_creator" => $cse_array[0],
+    "cse_id" => $cse_array[1],
+    "title" => config_get($config_name, 'google_cse_alt_name'),
+  );
+
+  print theme('google_cse_alt_xml', array('node' => $cse_variables));
+}
+
+
+/**
+ * Check content types that configured to allow the nodes be rendered as PBCore xml.
+ */
+function google_cse_alt_render_xml_access() {
+
+  // 2020-04-28 RJL edit: this seems unncessary
+  return FALSE;
+  // END RJL edit
+
+    return TRUE;
+}
+
+
+/**
+ * Implement hook_search_info().
+ */
+function google_cse_alt_search_info() {
+  return array(
+    'title' => google_cse_alt_results_tab(),
+    'path' => 'google',
+    'conditions_callback' => 'google_cse_alt_conditions_callback',
+  );
+}
+
+
+/**
+ * Search conditions callback.
+ */
+function google_cse_alt_conditions_callback($keys) {
+  $conditions = array();
+  return $conditions;
+}
+
+
+/**
+ * Implement hook_search_execute().
+ */
+function google_cse_alt_search_execute($keys = NULL, $conditions = NULL) {
+  // Pass search terms to JS so they can be sent in google_cse_alt_results.js
+  backdrop_add_js(array('googleCSE' => array('keys' => $keys)), 'setting');
+}
+
+
+/**
+ * Build a query array based on Google CSE settings.
+ * TBD, this doesn't seem to be called?
+ */
+function google_cse_alt_build_query($keys, $sitesearch = NULL, $here = TRUE) {
+  $config_name = _google_cse_alt_config_name();
+  return array(
+    'q' => $keys,
+    'cx' => config_get($config_name, 'google_cse_alt_cx', ''),
+  );
+}
+
+
+/**
+ * Implement hook_search_page().
+ */
+function google_cse_alt_search_page($results) {
+    $output['#theme'] = 'google_cse_alt_results';
+    return $output;
+}
+
+
+/**
+ * Implement hook_search_admin().
+ */
+function google_cse_alt_search_admin() {
+  module_load_include('inc', 'google_cse_alt', 'google_cse_alt.admin');
+  return google_cse_alt_admin_settings();
+}
+
+
+/**
+ * Implement hook_search_access().
+ */
+function google_cse_alt_search_access() {
+  return user_access('search Google CSE');
+}
+
+
+/**
+ * Implement hook_theme().
+ */
+function google_cse_alt_theme($existing, $type, $theme, $path) {
+  return array(
+    'google_cse_alt_results' => array(
+      'variables' => array(
+        'form' => FALSE,
+        'cse_id' => 1,
+        'path' => $path),
+      'file' => 'google_cse_alt.theme.inc',
+      'template' => 'templates/google_cse_alt_results',
+    ),
+    // Shows a message when the search does not return any result.
+    'google_cse_alt_search_noresults' => array(
+      'variables' => array(),
+    ),
+    'google_cse_alt_xml' => array(
+      'template' => 'templates/google_cse_alt_export',
+      'variables' => array('node' => NULL),
+    ),
+  );
+}
+
+
+/**
+ * Return the sanitized title of a CSE block.
+ */
+function _google_cse_alt_block_title($id) {
+  $config_name = _google_cse_alt_config_name();
+  $title = config_get($config_name, "google_cse_alt_name_{$id}");
+  if (empty($title)) {
+    return t('Google CSE Block @id', array('@id' => $id));
+  }
+  else {
+    return t('Search @title', array('@title' => $title));
+  }
+}
+
+
+/**
+ * Implement hook_block_info().
+ */
+function google_cse_alt_block_info() {
+  $config_name = _google_cse_alt_config_name();
+  $blocks = array();
+  $num_blocks = config_get($config_name, 'google_cse_alt_num_blocks');
+  for ($id = 1; $id <= $num_blocks; $id++) {
+    $blocks["google_cse_alt_{$id}"] = array(
+      'info' => _google_cse_alt_block_title($id),
+    );
+  }
+  return $blocks;
+}
+
+
+/**
+ * Implements hook_block_view().
+ */
+function google_cse_alt_block_view($delta = '') {
+  $config_name = _google_cse_alt_config_name();
+  if (user_access('search Google CSE')) {
+    $num_blocks = config_get($config_name, 'google_cse_alt_num_blocks');
+    for ($id = 1; $id <= $num_blocks; $id++) {
+      if ($delta == "google_cse_alt_{$id}") {
+
+        // Add Javscript settings for this particular block.
+        backdrop_add_js(
+          array(
+            'googleCSE' => array(
+              'cx' => config_get($config_name, "google_cse_alt_cx_{$id}"),
+              'resultsWidth' => intval(config_get($config_name, "google_cse_alt_results_width_{$id}")),
+              'domain' => config_get($config_name, 'google_cse_alt_domain'),
+              'showWaterMark' => config_get($config_name, "google_cse_alt_show_watermark_{$id}"),
+            ),
+          ), 'setting');
+
+        return array(
+          'subject' => t('Search'),
+          'content' => array(
+            '#theme' => 'google_cse_alt_results',
+            '#form' => TRUE,
+            '#cse_id' => $id,
+          ),
+        );
+      }
+    }
+  }
+}
+
+
+/**
+ * Return the Google CSE tab title, either a setting or a translation.
+ * TBD, handle multiple blocks
+ */
+function google_cse_alt_results_tab() {
+  $config_name = _google_cse_alt_config_name();
+  return ($var = config_get($config_name, 'google_cse_alt_results_tab_1')) ? $var : t('Google');
+}
+
+
+/**
+ * Implement hook_perm().
+ */
+function google_cse_alt_permission() {
+  $perms = array(
+    'search Google CSE' => array(
+      'title' => t('Use Google CSE search'),
+    ),
+    'administer Google CSE' => array(
+      'title' => t('Administer Google CSE search'),
+    ),
+  );
+
+  return $perms;
+}
+
+
+/**
+ * Implement hook_init().
+ */
+function google_cse_alt_init() {
+  // Need to initialize JS variables in case we don't have the block showing.
+  $config_name = _google_cse_alt_config_name();
+  backdrop_add_js(
+    array(
+      'googleCSE' => array(
+        'cx' => '',
+        'resultsWidth' => 600,
+        'domain' => config_get($config_name, 'google_cse_alt_domain'),
+        'showWaterMark' => FALSE,
+      ),
+    ), 'setting');
+}
+
+
+/**
+ * Add custom submit handler for standalone search form.
+ */
+function google_cse_alt_form_search_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['module']['#value'] == 'google_cse_alt') {
+    $form['#attributes']['class'][] = 'google-cse-alt';
+  }
+}
+
+
+/**
+ * Add custom submit handler for search block form.
+ */
+function google_cse_alt_form_search_block_form_alter(&$form, &$form_state, $form_id) {
+  $info = search_get_default_module_info();
+  if ($info['module'] == 'google_cse_alt') {
+    $form['#attributes']['class'][] = 'google-cse-alt';
+  }
+}
+
+
+/**
+ * Brief message to display when no results match the query.
+ *
+ * @see search_help()
+ */
+function theme_google_cse_alt_search_noresults() {
+  return t('<h2>Sorry, there were no results matching your enquiry.</h2>
+    <ul>
+    <li>Check the spelling of your keywords</li>
+    <li>Try a more specific enquiry (e.g. <em>"Penny Black"</em> instead of <em>"Stamps"</em>).</em></li>
+    <li>Be explicit (e.g. <em>"Second class stamp"</em> instead of <em>"Stamp"</em>).</li>
+    <li>Include spaces between keywords.</li>
+    </ul>');
+}
+
+
+/**
+ * Return the name of the relevant config file.
+ */
+function _google_cse_alt_config_name() {
+  $config_name = &backdrop_static(__FUNCTION__);
+  if (isset($config_name)) {
+    return $config_name;
+  }
+  $config_name = module_exists('search') ? 'search.settings' : 'google_cse_alt.settings';
+  return $config_name;
+}

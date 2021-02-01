@@ -1,0 +1,14 @@
+name = Google CSE (Alternative)
+description = Use Google Custom Search to search your site.
+type = module
+backdrop = 1.x
+project = google_cse_alt
+version = 1.x-3.0
+
+files[] = google_cse_alt.module
+files[] = google_cse_alt.theme.inc
+files[] = tests/google_cse_alt.test
+
+scripts[] = js/google_cse_alt.js
+
+stylesheets[all][] = css/google_cse_alt.css

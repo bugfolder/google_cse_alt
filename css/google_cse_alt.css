@@ -1,0 +1,17 @@
+
+.google-cse-alt-search-glyph {
+    position: relative;
+    right: 35px;
+    pointer-events: none;
+    color: white;
+    font-size: 18px;
+}
+
+#google-cse-alt-results-searchbox-form div, #google-cse-alt-results-searchbox-form input {
+    margin: 0;
+    display: inline;
+}
+
+#google-cse-alt-results-searchbox-form .form-radios div {
+    display: block;
+}

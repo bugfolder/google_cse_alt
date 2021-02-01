@@ -1,0 +1,134 @@
+<?php
+/**
+ * @file
+ * Installation functions.
+ */
+
+
+/**
+ * Implements hook_install().
+ */
+function google_cse_alt_install() {
+  if (module_exists('search')) {
+    $config = config('search.settings');
+    $active_modules = $config->get('search_active_modules');
+    $active_modules[] = 'google_cse_alt';
+    $config->set('search_active_modules', $active_modules);
+    $config->set('google_cse_alt_domain', 'www.google.com');
+    $config->set('google_cse_alt_num_blocks', 0);
+    $config->save();
+  }
+}
+
+
+/**
+ * Implements hook_update_last_removed().
+ */
+// function google_cse_alt_update_last_removed() {
+//   return 7202;
+// }
+
+
+/**
+ * Implements hook_update_dependencies().
+ *
+ * Make sure Search module has already created the config files before running
+ * update 1000 so that we can read and write config variables if needed.
+ *
+ * @see search_update_1000().
+ */
+function google_cse_alt_update_dependencies() {
+  if (module_exists('search')) {
+    $dependencies['google_cse_alt'][1000] = array(
+      'search' => 1000,
+    );
+  }
+}
+
+
+/**
+ * Convert Google CSE variables to config settings.
+ */
+function google_cse_alt_update_1000() {
+  // If Search model exists, search_update_1000 has already converted its own
+  // variables to config, but we need to convert CSE variables anyhow.
+  $config_name = module_exists('search') ? 'search.settings' : 'google_cse_alt.settings';
+  $config = config($config_name);
+  $config->set('google_cse_alt_domain', update_variable_get('google_cse_domain', 'www.google.com'));
+  update_variable_del('google_cse_domain');
+
+  $num_blocks = update_variable_get('google_cse_num_blocks', 0);
+  $config->set('google_cse_alt_num_blocks', $num_blocks);
+  update_variable_del('google_cse_num_blocks');
+
+  for ($id = 1; $id <= $num_blocks; $id++) {
+    foreach (_google_cse_alt_vars() as $var) {
+      $var_name = "google_cse_alt_{$var}_{$id}";
+      $config->set($var_name, update_variable_get($var_name, ''));
+      $del_var_name = "google_cse_{$var}_{$id}";
+      update_variable_del($del_var_name);
+    }
+  }
+  $config->save();
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function google_cse_alt_uninstall() {
+  if (module_exists('search')) {
+    $config = config('search.settings');
+
+    // Delete Google CSE from the list of active search modules.
+    $active_modules = $config->get('search_active_modules');
+    if (in_array('google_cse_alt', $active_modules)) {
+      $active_modules = array_diff($active_modules, ['google_cse_alt'] );
+      $config->set('search_active_modules', $active_modules);
+    }
+    // Clear the active search module if it was us. (User will need to set it to
+    // something else.)
+    if ($config->get('search_default_module') == 'google_cse_alt') {
+      $config->set('search_default_module', '');
+    }
+    // We'll also need to explicitly delete all of our own settings from the
+    // Search config.
+    $num_blocks = intval($config->get('google_cse_alt_num_blocks'));
+    $config->clear('google_cse_alt_num_blocks');
+    $config->clear('google_cse_alt_domain');
+    for ($id = 1; $id <= $num_blocks; $id++) {
+      foreach (_google_cse_alt_vars() as $var) {
+        $var_name = "google_cse_alt_{$var}_{$id}";
+        $config->clear($var_name);
+      }
+    }
+    $config->save();
+  }
+}
+
+
+/**
+ * Return a list of all id-specific settings variables.
+ */
+function _google_cse_alt_vars() {
+  return array(
+    'name',
+    'cx',
+    'show_watermark',
+    'placeholder',
+    'glyph',
+    'results_tab',
+    'results_searchbox_title',
+    'results_searchbox_width',
+    'results_width',
+    'cof_here',
+    'cof_google',
+    'results_prefix',
+    'results_suffix',
+    'results_display',
+    'results_display_images',
+    'tag_attributes',
+    'custom_css',
+    'custom_results_display',
+  );
+}
