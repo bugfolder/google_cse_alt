@@ -22,7 +22,7 @@ CSE(s). Go to
 will find the "Search engine unique ID" under "Basic information".
 
 Once you have granted permission for one or more roles to search
-the Google CSE, the search page can be found at search/google, and 
+the Google CSE, the search page can be found at search/google, and
 separate self-contained search blocks can also be enabled at
 admin/structure/block.  Each block provides a search box and
 also displays the search results.  After entering search terms, the user
@@ -35,9 +35,9 @@ Documentation
 
 Google Custom Search Engine (CSE) is an embedded search engine that can
 be used to search any set of one or more sites.  No Google API key is
-required.  Read more at [Google's documentation[(http://www.google.com/cse/).
+required.  Read more at [Google's documentation](http://www.google.com/cse/).
 
-Additional documentation is located in [the Wiki](https://github.com/backdrop-contrib/foo-project/wiki/Documentation).
+Additional documentation is located in [the Wiki](https://github.com/backdrop-contrib/google_cse_alt/wiki/Documentation).
 
 Differences from Google Custom Search
 -------------------------
@@ -53,21 +53,18 @@ Google Custom Search (Alternative) includes some additions to Google Custom Sear
 Issues
 ------
 
-Bugs and feature requests should be reported in [the Issue Queue](https://github.com/backdrop-contrib/foo-project/issues).
+Bugs and feature requests should be reported in [the Issue Queue](https://github.com/backdrop-contrib/google_cse_alt/issues).
 
 Current Maintainers
 -------------------
 
-- [Robert J. Lang](https://github.com/bugfolder).
-- [Jane Smith](https://github.com/username).
+- [Robert J. Lang](https://github.com/backdrop-contrib).
 
 Credits
 -------
 
-- Ported to Backdrop CMS by [Robert J. Lang](https://github.com/bugfolder).
-- Originally written for Drupal by [Bob Brown](https://github.com/username).
-- Based on the [MagicalCode project](https://github.com/example).
-- Sponsored by [TechNoCorp](https://example.com)
+- Ported to Backdrop CMS by [Robert J. Lang](https://github.com/backdrop-contrib).
+- Google CSE originally written for Drupal by [University of Colorado Boulder](https://www.drupal.org/u/university-of-colorado-boulder) and recently maintained by [Mark Burdett(mfb)](https://www.drupal.org/user/12302).
 
 License
 -------

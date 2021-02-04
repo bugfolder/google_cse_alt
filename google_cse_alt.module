@@ -76,13 +76,13 @@ function google_cse_alt_render_xml_access() {
 
 
 /**
- * Implement hook_search_info().
+ * Implements hook_search_info().
  */
 function google_cse_alt_search_info() {
   return array(
-    'title' => google_cse_alt_results_tab(),
+    'title' => t('Google Custom Search Engine'),
     'path' => 'google',
-    'conditions_callback' => 'google_cse_alt_conditions_callback',
+    'conditions_callback' => 'google_cse_alt_search_conditions_callback',
   );
 }
 
@@ -90,7 +90,7 @@ function google_cse_alt_search_info() {
 /**
  * Search conditions callback.
  */
-function google_cse_alt_conditions_callback($keys) {
+function google_cse_alt_search_conditions_callback($keys) {
   $conditions = array();
   return $conditions;
 }
@@ -239,10 +239,10 @@ function google_cse_alt_block_view($delta = '') {
  * Return the Google CSE tab title, either a setting or a translation.
  * TBD, handle multiple blocks
  */
-function google_cse_alt_results_tab() {
-  $config_name = _google_cse_alt_config_name();
-  return ($var = config_get($config_name, 'google_cse_alt_results_tab_1')) ? $var : t('Google');
-}
+// function google_cse_alt_results_tab() {
+//   $config_name = _google_cse_alt_config_name();
+//   return ($var = config_get($config_name, 'google_cse_alt_results_tab_1')) ? $var : t('Google');
+// }
 
 
 /**
